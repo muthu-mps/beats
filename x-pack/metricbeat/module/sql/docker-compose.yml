@@ -1,6 +1,10 @@
 version: '2.3'
 
 services:
+  mssql:
+    extends:
+      file: ../../../../x-pack/metricbeat/module/mssql/docker-compose.yml
+      service: mssql
   mysql:
     extends:
       file: ../../../../metricbeat/module/mysql/docker-compose.yml

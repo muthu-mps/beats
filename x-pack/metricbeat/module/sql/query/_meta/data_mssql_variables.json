@@ -1,0 +1,25 @@
+{
+    "@timestamp": "2017-10-12T08:05:34.853Z",
+    "event": {
+        "dataset": "sql.query",
+        "duration": 115000,
+        "module": "sql"
+    },
+    "metricset": {
+        "name": "query",
+        "period": 10000
+    },
+    "service": {
+        "address": "54.90.251.237",
+        "type": "sql"
+    },
+    "sql": {
+        "driver": "mssql",
+        "metrics": {
+            "numeric": {
+                "sql re-compilations/sec": 361
+            }
+        },
+        "query": "SELECT counter_name As 'SQL Re-Compilations/sec', cntr_value FROM sys.dm_os_performance_counters WHERE counter_name = 'SQL Re-Compilations/sec'"
+    }
+}

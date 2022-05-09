@@ -1,0 +1,28 @@
+{
+    "@timestamp": "2017-10-12T08:05:34.853Z",
+    "event": {
+        "dataset": "sql.query",
+        "duration": 115000,
+        "module": "sql"
+    },
+    "metricset": {
+        "name": "query",
+        "period": 10000
+    },
+    "service": {
+        "address": "54.90.251.237",
+        "type": "sql"
+    },
+    "sql": {
+        "driver": "mssql",
+        "metrics": {
+            "numeric": {
+                "database_id": 1
+            },
+            "string": {
+                "name": "master"
+            }
+        },
+        "query": "SELECT name, database_id FROM sys.databases;"
+    }
+}

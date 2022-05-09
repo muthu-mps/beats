@@ -11,7 +11,8 @@ import (
 	"fmt"
 	"net"
 	"testing"
-
+	// Drivers
+	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -34,6 +35,39 @@ type testFetchConfig struct {
 	ResponseFormat string
 
 	Assertion func(t *testing.T, event beat.Event)
+}
+
+// For MacOS M1 machines connect to remote mssql running instance by
+// replacing - Host:"sqlserver://<<mssql_host>>",
+func TestMssql(t *testing.T) {
+	service := compose.EnsureUp(t, "mssql")
+	config := testFetchConfig{
+		Driver:         "mssql",
+		Query:          "SELECT counter_name As 'SQL Re-Compilations/sec', cntr_value FROM sys.dm_os_performance_counters WHERE counter_name = 'SQL Re-Compilations/sec'",
+		Host:           service.Host(),
+		ResponseFormat: variableResponseFormat,
+		Assertion:      assertFieldNotContains("service.address", ":test@"),
+	}
+
+	t.Run("fetch", func(t *testing.T) {
+		testFetch(t, config)
+	})
+
+	t.Run("data", func(t *testing.T) {
+		testData(t, config, "./_meta/data_mssql_variables.json")
+	})
+
+	config = testFetchConfig{
+		Driver:         "mssql",
+		Query:          "SELECT 'mssql.transaction_log.numeric.stats.total_size.bytes' As total_log_size_mb, mssql.transaction_log.stats.total_size.bytes FROM sys.dm_db_log_stats(1) master;",
+		Host:           service.Host(),
+		ResponseFormat: tableResponseFormat,
+		Assertion:      assertFieldNotContains("service.address", ":test@"),
+	}
+
+	t.Run("data", func(t *testing.T) {
+		testData(t, config, "./_meta/data_mssql_tables.json")
+	})
 }
 
 func TestMySQL(t *testing.T) {
