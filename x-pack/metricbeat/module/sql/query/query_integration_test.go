@@ -9,7 +9,9 @@ package query
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"net"
+	"net/url"
 	"testing"
 	// Drivers
 	_ "github.com/denisenkom/go-mssqldb"
@@ -26,6 +28,7 @@ import (
 	mbtest "github.com/elastic/beats/v7/metricbeat/mb/testing"
 	"github.com/elastic/beats/v7/metricbeat/module/mysql"
 	"github.com/elastic/beats/v7/metricbeat/module/postgresql"
+	mtest "github.com/elastic/beats/v7/x-pack/metricbeat/module/mssql/testing"
 )
 
 type testFetchConfig struct {
@@ -41,10 +44,31 @@ type testFetchConfig struct {
 // replacing - Host:"sqlserver://<<mssql_host>>",
 func TestMssql(t *testing.T) {
 	service := compose.EnsureUp(t, "mssql")
+	mssqlConfig := mtest.GetConfig(service.Host(), "performance")
+	host, ok := mssqlConfig["hosts"].([]string)
+	if !ok {
+		errors.New("error getting username information")
+	}
+
+	username, ok := mssqlConfig["username"].(string)
+	if !ok {
+		errors.New("error getting username information")
+	}
+
+	password, ok := mssqlConfig["password"].(string)
+	if !ok {
+		errors.New("error getting password information")
+	}
+	// Frame connection string to establish connection with mssql
+	hostUrl := &url.URL{
+		Scheme: "sqlserver",
+		User:   url.UserPassword(username, password),
+		Host:   host[0],
+	}
 	config := testFetchConfig{
 		Driver:         "mssql",
 		Query:          "SELECT counter_name As 'SQL Re-Compilations/sec', cntr_value FROM sys.dm_os_performance_counters WHERE counter_name = 'SQL Re-Compilations/sec'",
-		Host:           service.Host(),
+		Host:           hostUrl.String(),
 		ResponseFormat: variableResponseFormat,
 		Assertion:      assertFieldNotContains("service.address", ":test@"),
 	}
@@ -60,7 +84,7 @@ func TestMssql(t *testing.T) {
 	config = testFetchConfig{
 		Driver:         "mssql",
 		Query:          "SELECT 'mssql.transaction_log.numeric.stats.total_size.bytes' As total_log_size_mb, mssql.transaction_log.stats.total_size.bytes FROM sys.dm_db_log_stats(1) master;",
-		Host:           service.Host(),
+		Host:           hostUrl.String(),
 		ResponseFormat: tableResponseFormat,
 		Assertion:      assertFieldNotContains("service.address", ":test@"),
 	}
